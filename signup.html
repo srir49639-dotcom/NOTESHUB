@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - Notes Hub</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .auth-container {
+      max-width: 400px;
+      margin: 4rem auto;
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .auth-logo {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-logo">
+        <i class="fas fa-book-open"></i>
+        Notes Hub
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <button id="theme-toggle" class="btn-icon" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content container">
+    <div class="auth-container card">
+      <div class="card-body">
+        <div class="auth-header">
+          <i class="fas fa-user-plus auth-logo"></i>
+          <h2>Create Account</h2>
+          <p class="text-muted mt-1">Join the community</p>
+        </div>
+
+        <form id="signup-form">
+          <div class="form-group">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" id="username" class="form-control" required placeholder="Choose a username">
+          </div>
+          <div class="form-group">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" class="form-control" required placeholder="Enter your email">
+          </div>
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="password" class="form-control" required placeholder="Create a password"
+              minlength="6">
+          </div>
+          <button type="submit" class="btn btn-primary w-full mt-4">Sign Up</button>
+        </form>
+
+        <p class="text-center mt-4 text-muted">
+          Already have an account? <a href="login.html">Login</a>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (state.currentUser) {
+        window.location.href = 'index.html';
+      }
+
+      const form = document.getElementById('signup-form');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        // Basic validation
+        if (db.getUserByEmail(email)) {
+          showToast('An account with this email already exists', 'error');
+          return;
+        }
+        if (db.getUsers().find(u => u.username.toLowerCase() === username.toLowerCase())) {
+          showToast('Username already taken', 'error');
+          return;
+        }
+
+        const newUser = {
+          userId: generateId(),
+          username,
+          email,
+          password,
+          joinDate: new Date().toISOString(),
+          uploads: 0,
+          downloads: 0,
+          averageRating: 0, // precomputed for ease
+          badges: []
+        };
+
+        db.saveUser(newUser);
+
+        // Auto login
+        localStorage.setItem('activeUser', newUser.userId);
+        state.currentUser = newUser;
+        showToast('Account created successfully!', 'success');
+
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 1000);
+      });
+    });
+  </script>
+</body>
+
+</html>

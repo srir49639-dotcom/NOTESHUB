@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Notes Hub</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .auth-container {
+      max-width: 400px;
+      margin: 4rem auto;
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .auth-logo {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-logo">
+        <i class="fas fa-book-open"></i>
+        Notes Hub
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <button id="theme-toggle" class="btn-icon" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content container">
+    <div class="auth-container card">
+      <div class="card-body">
+        <div class="auth-header">
+          <i class="fas fa-user-circle auth-logo"></i>
+          <h2>Welcome Back</h2>
+          <p class="text-muted mt-1">Login to access your notes</p>
+        </div>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" class="form-control" required placeholder="Enter your email">
+          </div>
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="password" class="form-control" required placeholder="Enter your password">
+          </div>
+          <button type="submit" class="btn btn-primary w-full mt-4">Login</button>
+        </form>
+
+        <p class="text-center mt-4 text-muted">
+          Don't have an account? <a href="signup.html">Sign up</a>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // If already logged in, redirect
+      if (state.currentUser) {
+        window.location.href = 'index.html';
+      }
+
+      const form = document.getElementById('login-form');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        const user = db.getUserByEmail(email);
+
+        if (!user || user.password !== password) {
+          showToast('Invalid email or password', 'error');
+          return;
+        }
+
+        // Success
+        localStorage.setItem('activeUser', user.userId);
+        state.currentUser = user;
+        showToast(`Welcome back, ${user.username}!`, 'success');
+
+        setTimeout(() => {
+          const redirect = localStorage.getItem('redirectAfterLogin') || 'index.html';
+          localStorage.removeItem('redirectAfterLogin');
+          window.location.href = redirect;
+        }, 1000);
+      });
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard - Notes Hub</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .leaderboard-title {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: var(--primary-color);
+    }
+
+    .leaderboard-section {
+      background: var(--surface-color);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      margin-bottom: 3rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .leaderboard-header {
+      padding: 1.5rem;
+      background: var(--surface-hover);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .leaderboard-header h2 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    .lb-row {
+      display: flex;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      transition: background-color var(--transition-fast);
+    }
+
+    .lb-row:last-child {
+      border-bottom: none;
+    }
+
+    .lb-row:hover {
+      background-color: var(--bg-color);
+    }
+
+    .lb-rank {
+      width: 40px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--text-muted);
+    }
+
+    .lb-rank.gold {
+      color: #fbbf24;
+      font-size: 1.5rem;
+    }
+
+    .lb-rank.silver {
+      color: #9ca3af;
+      font-size: 1.3rem;
+    }
+
+    .lb-rank.bronze {
+      color: #b45309;
+      font-size: 1.2rem;
+    }
+
+    .lb-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .lb-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .lb-name {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .lb-stat {
+      text-align: right;
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    .lb-stat span {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-logo">
+        <i class="fas fa-book-open"></i>
+        Notes Hub
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="upload.html" class="nav-link auth-user-only">Upload</a>
+        <a href="leaderboard.html" class="nav-link active">Leaderboard</a>
+        <a href="saved.html" class="nav-link auth-user-only">Saved Notes</a>
+        <a href="profile.html" class="nav-link auth-user-only">Profile</a>
+        <a href="login.html" class="nav-link auth-guest-only">Login</a>
+        <a href="signup.html" class="btn btn-primary auth-guest-only">Sign Up</a>
+        <button id="theme-toggle" class="btn-icon" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+        <button id="logout-btn" class="btn-icon auth-user-only" title="Logout">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+      <button class="btn-icon mobile-menu-btn">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content container">
+    <div class="leaderboard-title">
+      <h1><i class="fas fa-trophy"></i> Hall of Fame</h1>
+      <p class="text-muted mt-2">Recognizing our top contributors and best notes.</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6">
+
+      <!-- Top Uploaders -->
+      <section class="leaderboard-section">
+        <div class="leaderboard-header">
+          <i class="fas fa-users text-primary fa-lg"></i>
+          <h2>Top Uploaders</h2>
+        </div>
+        <div id="users-lb">
+          <!-- Injected JS -->
+        </div>
+      </section>
+
+      <!-- Top Notes -->
+      <section class="leaderboard-section">
+        <div class="leaderboard-header">
+          <i class="fas fa-star text-warning fa-lg"></i>
+          <h2>Highest Rated Notes</h2>
+        </div>
+        <div id="notes-lb">
+          <!-- Injected JS -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderUploaders();
+      renderNotes();
+    });
+
+    function getRankHtml(index) {
+      if (index === 0) return `<div class="lb-rank gold"><i class="fas fa-medal"></i></div>`;
+      if (index === 1) return `<div class="lb-rank silver"><i class="fas fa-medal"></i></div>`;
+      if (index === 2) return `<div class="lb-rank bronze"><i class="fas fa-medal"></i></div>`;
+      return `<div class="lb-rank">#${index + 1}</div>`;
+    }
+
+    function renderUploaders() {
+      const users = db.getUsers().sort((a, b) => b.uploads - a.uploads).slice(0, 10);
+      const container = document.getElementById('users-lb');
+
+      if (users.length === 0 || users[0].uploads === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-muted">No top uploaders yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = users.filter(u => u.uploads > 0).map((u, i) => `
+        <div class="lb-row">
+          ${getRankHtml(i)}
+          <div class="lb-main">
+            <div class="lb-avatar">${u.username.charAt(0).toUpperCase()}</div>
+            <div class="lb-name">
+              ${u.username}
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:400; margin-top:0.25rem;">
+                ${u.badges.length > 0 ? `<i class="fas fa-tag text-warning"></i> ${u.badges[0]}` : ''}
+              </div>
+            </div>
+          </div>
+          <div class="lb-stat">
+            ${u.uploads}
+            <span>Uploads</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderNotes() {
+      // Must have at least 1 rating
+      const notes = db.getNotes()
+        .filter(n => n.ratingCount > 0)
+        .sort((a, b) => parseFloat(b.averageRating) - parseFloat(a.averageRating))
+        .slice(0, 10);
+
+      const container = document.getElementById('notes-lb');
+
+      if (notes.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-muted">No rated notes yet. Be the first to rate!</div>`;
+        return;
+      }
+
+      container.innerHTML = notes.map((n, i) => `
+        <div class="lb-row">
+          ${getRankHtml(i)}
+          <div class="lb-main block">
+            <div class="lb-name" style="margin-bottom:0.25rem;">${n.title}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted)">
+              By ${n.uploaderName} &bull; ${n.subject}
+            </div>
+          </div>
+          <div class="lb-stat" style="color:var(--warning-color)">
+            <i class="fas fa-star"></i> ${n.averageRating}
+            <span>${n.ratingCount} ratings</span>
+          </div>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+
+</html>

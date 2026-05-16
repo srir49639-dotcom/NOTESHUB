@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notes Hub - Discover Notes</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .hero-section {
+      text-align: center;
+      padding: 4rem 1rem;
+      background: linear-gradient(135deg, var(--primary-light), var(--surface-color));
+      border-radius: var(--radius-lg);
+      margin-bottom: 3rem;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+
+    .search-bar {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      font-size: 1rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .rating-stars {
+      color: var(--warning-color);
+      letter-spacing: 2px;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-full);
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+    }
+
+    .filter-btn.active,
+    .filter-btn:hover {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-logo">
+        <i class="fas fa-book-open"></i>
+        Notes Hub
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link active">Home</a>
+        <a href="upload.html" class="nav-link auth-user-only">Upload</a>
+        <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+        <a href="saved.html" class="nav-link auth-user-only">Saved Notes</a>
+        <a href="profile.html" class="nav-link auth-user-only">Profile</a>
+        <a href="login.html" class="nav-link auth-guest-only">Login</a>
+        <a href="signup.html" class="btn btn-primary auth-guest-only">Sign Up</a>
+        <button id="theme-toggle" class="btn-icon" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+        <button id="logout-btn" class="btn-icon auth-user-only" title="Logout">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+      <button class="btn-icon mobile-menu-btn">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content container">
+    <section class="hero-section">
+      <h1 class="hero-title">Discover Perfect Notes</h1>
+      <p class="hero-subtitle">Access thousands of study materials shared by top students worldwide.</p>
+      <div class="search-bar">
+        <input type="text" id="search-input" class="search-input" placeholder="Search by title, subject, or tags...">
+        <button class="btn btn-primary" style="border-radius: var(--radius-full); padding: 0 1.5rem;"
+          onclick="filterFeed()">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <div class="section-header mb-8">
+      <h2 class="section-title" id="feed-title"><i class="fas fa-fire text-danger"></i> Trending Notes</h2>
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="trending">Trending</button>
+        <button class="filter-btn" data-filter="latest">Latest</button>
+        <button class="filter-btn" data-filter="top">Top Rated</button>
+      </div>
+    </div>
+
+    <!-- Notes Feed -->
+    <div id="notes-grid" class="grid grid-cols-3 gap-6 mb-8">
+      <!-- Notes injected here -->
+    </div>
+
+    <div id="empty-state" class="text-center py-8" style="display: none; padding: 4rem 1rem;">
+      <i class="fas fa-search fa-4x text-muted mb-4"></i>
+      <h3>No notes found</h3>
+      <p class="text-muted mt-2">Try adjusting your search or filters.</p>
+    </div>
+
+  </main>
+
+  <!-- Global Modal for Preview -->
+  <div class="modal-overlay" id="preview-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="preview-title">Preview</h3>
+        <button class="btn-icon" id="close-modal"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="preview-body" style="height: 60vh; display: flex; flex-direction: column;">
+        <!-- Inject Preview -->
+      </div>
+      <div class="card-footer" style="padding: 1rem 1.5rem;" id="preview-footer">
+        <!-- Interactive actions (rate, comment) -->
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    let currentFilter = 'trending';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderFeed();
+
+      // Search bindings
+      document.getElementById('search-input').addEventListener('input', (e) => {
+        filterFeed(e.target.value.toLowerCase());
+      });
+
+      // Filter bindings
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          currentFilter = e.target.getAttribute('data-filter');
+
+          const titleMap = {
+            'trending': '<i class="fas fa-fire text-danger"></i> Trending Notes',
+            'latest': '<i class="fas fa-clock text-primary"></i> Latest Uploads',
+            'top': '<i class="fas fa-star text-warning"></i> Top Rated Notes'
+          };
+          document.getElementById('feed-title').innerHTML = titleMap[currentFilter];
+
+          renderFeed(document.getElementById('search-input').value.toLowerCase());
+        });
+      });
+
+      // Modal Setup
+      document.getElementById('close-modal').addEventListener('click', () => {
+        document.getElementById('preview-modal').classList.remove('active');
+        document.getElementById('preview-body').innerHTML = ''; // clear heavy DOM
+      });
+      document.getElementById('preview-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('preview-modal')) {
+          document.getElementById('close-modal').click();
+        }
+      });
+    });
+
+    function getStars(rating) {
+      const full = Math.floor(rating);
+      const half = rating % 1 >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      return `${'<i class="fas fa-star"></i>'.repeat(full)}${'<i class="fas fa-star-half-alt"></i>'.repeat(half)}${'<i class="far fa-star"></i>'.repeat(empty)}`;
+    }
+
+    function renderFeed(searchQuery = '') {
+      let notes = db.getNotes();
+
+      // Apply Search
+      if (searchQuery) {
+        notes = notes.filter(n =>
+          n.title.toLowerCase().includes(searchQuery) ||
+          n.subject.toLowerCase().includes(searchQuery) ||
+          n.tags.some(t => t.toLowerCase().includes(searchQuery)) ||
+          n.uploaderName.toLowerCase().includes(searchQuery)
+        );
+      }
+
+      // Apply Sort
+      if (currentFilter === 'latest') {
+        notes.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+      } else if (currentFilter === 'top') {
+        notes.sort((a, b) => b.averageRating - a.averageRating);
+      } else if (currentFilter === 'trending') {
+        // Simple trending algo: downloads + rating
+        notes.sort((a, b) => (b.downloadCount + b.averageRating * 5) - (a.downloadCount + a.averageRating * 5));
+      }
+
+      const grid = document.getElementById('notes-grid');
+      const emptyState = document.getElementById('empty-state');
+      grid.innerHTML = '';
+
+      if (notes.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      // Render Cards
+      notes.forEach(note => {
+        const isBookmarked = state.currentUser ? db.getBookmarks(state.currentUser.userId).includes(note.noteId) : false;
+
+        const card = document.createElement('div');
+        card.className = 'card note-card';
+        card.innerHTML = `
+          <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--primary-color);">
+                ${note.subject}
+              </span>
+              <button class="btn-icon bookmark-btn" data-id="${note.noteId}" title="Bookmark">
+                <i class="${isBookmarked ? 'fas text-primary' : 'far'} fa-bookmark"></i>
+              </button>
+            </div>
+            <h3 class="note-title">${note.title}</h3>
+            <div class="note-meta">
+              <span><i class="far fa-user"></i> ${note.uploaderName}</span>
+              <span><i class="far fa-calendar-alt"></i> ${formatDate(note.uploadDate)}</span>
+            </div>
+            <div class="rating-stars mb-4" title="${note.averageRating} out of 5">
+              ${getStars(note.averageRating)} <span class="text-muted" style="font-size:0.8rem; letter-spacing:0">(${note.ratingCount})</span>
+            </div>
+            <div class="note-tags">
+              ${note.tags.slice(0, 3).map(t => `<span class="tag">${t}</span>`).join('')}
+              ${note.tags.length > 3 ? `<span class="tag">+${note.tags.length - 3}</span>` : ''}
+            </div>
+          </div>
+          <div class="card-footer">
+             <div style="display:flex; gap:0.5rem">
+               <button class="btn btn-secondary btn-sm preview-btn" data-id="${note.noteId}"><i class="fas fa-eye"></i> Preview</button>
+             </div>
+             <div class="text-muted" style="font-size: 0.875rem;">
+               <i class="fas fa-download"></i> <span id="dl-count-${note.noteId}">${note.downloadCount}</span>
+             </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      attachCardEvents();
+    }
+
+    function attachCardEvents() {
+      // Bookmark Click
+      document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          if (!requireAuth()) return;
+          const noteId = e.currentTarget.getAttribute('data-id');
+          const isMarked = db.toggleBookmark(state.currentUser.userId, noteId);
+          const icon = e.currentTarget.querySelector('i');
+
+          if (isMarked) {
+            icon.className = 'fas fa-bookmark text-primary';
+            showToast('Note saved to bookmarks', 'success');
+          } else {
+            icon.className = 'far fa-bookmark';
+            showToast('Note removed from bookmarks', 'info');
+          }
+        });
+      });
+
+      // Preview Click
+      document.querySelectorAll('.preview-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const noteId = e.currentTarget.getAttribute('data-id');
+          openPreviewModal(noteId);
+        });
+      });
+    }
+
+    // Modal and Previewing Logic
+    async function openPreviewModal(noteId) {
+      const note = db.getNoteById(noteId);
+      if (!note) return;
+
+      document.getElementById('preview-title').innerText = note.title;
+      const body = document.getElementById('preview-body');
+      const footer = document.getElementById('preview-footer');
+
+      body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%"><div class="loader"></div></div>';
+      document.getElementById('preview-modal').classList.add('active');
+
+      try {
+        const blob = await fileDB.getFile(note.fileId);
+        const url = URL.createObjectURL(blob);
+
+        let previewHtml = '';
+        if (note.fileType.includes('pdf')) {
+          previewHtml = `<embed src="${url}#toolbar=0" type="application/pdf" width="100%" height="100%">`;
+        } else if (note.fileType.includes('image')) {
+          previewHtml = `<div style="text-align:center; height:100%; overflow:auto;">
+                          <img src="${url}" style="max-width:100%; object-fit:contain;">
+                         </div>`;
+        } else {
+          previewHtml = `<div style="text-align:center; padding: 3rem;">
+                          <i class="fas fa-file-alt fa-4x text-muted mb-4"></i>
+                          <h4>Preview not available for this format</h4>
+                          <p class="text-muted mt-2">Please download the file to view its contents.</p>
+                         </div>`;
+        }
+
+        body.innerHTML = previewHtml;
+
+        // Render Action Footer (Like, Download, Comment)
+        const myRating = (state.currentUser && db.getRatings()[noteId] && db.getRatings()[noteId][state.currentUser.userId]) || 0;
+
+        footer.innerHTML = `
+          <div style="display:flex; gap: 0.5rem; align-items:center;">
+             <span>Rate:</span>
+             <div class="interactive-stars" id="star-rater" data-note="${noteId}">
+                ${[1, 2, 3, 4, 5].map(v =>
+          `<i class="${v <= myRating ? 'fas text-warning' : 'far text-muted'} fa-star" data-val="${v}" style="cursor:pointer; font-size:1.2rem;" title="${v} Star"></i>`
+        ).join('')}
+             </div>
+          </div>
+          <div>
+            <!-- We can add a go to comments button or direct download -->
+            <button class="btn btn-primary download-action-btn" data-id="${noteId}">
+              <i class="fas fa-download"></i> Download (${(blob.size / 1024 / 1024).toFixed(2)} MB)
+            </button>
+          </div>
+        `;
+
+        // Attach rater events
+        const stars = footer.querySelectorAll('#star-rater i');
+        stars.forEach(s => {
+          s.addEventListener('click', (e) => {
+            if (!requireAuth()) return;
+            const val = parseInt(e.target.getAttribute('data-val'));
+            db.rateNote(noteId, state.currentUser.userId, val);
+            showToast('Rating updated!', 'success');
+            // Re-render modal footer stars
+            stars.forEach((st, idx) => {
+              st.className = (idx < val) ? 'fas fa-star text-warning' : 'far fa-star text-muted';
+            });
+            // Check badges
+            checkAndAwardBadges(note.uploaderId);
+            // Background update feed silently
+            renderFeed(document.getElementById('search-input').value.toLowerCase());
+          });
+        });
+
+        // Attach download event
+        footer.querySelector('.download-action-btn').addEventListener('click', () => {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = note.fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+
+          // Update download count
+          note.downloadCount++;
+          db.updateNote(note);
+
+          // Update badges for uploader
+          checkAndAwardBadges(note.uploaderId);
+
+          // Update user's download stat
+          if (state.currentUser) {
+            const u = db.getUserById(state.currentUser.userId);
+            u.downloads++;
+            db.updateUser(u);
+          }
+
+          document.getElementById(`dl-count-${noteId}`).innerText = note.downloadCount;
+
+          showToast('Download started', 'success');
+        });
+
+      } catch (e) {
+        console.error(e);
+        body.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--danger-color)">
+                            <i class="fas fa-exclamation-triangle fa-3x mb-2"></i>
+                            <p>Error loading file preview. The file may be corrupted or missing.</p>
+                          </div>`;
+      }
+    }
+  </script>
+</body>
+
+</html>

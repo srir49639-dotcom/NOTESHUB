@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Profile - Notes Hub</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .profile-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      background: linear-gradient(135deg, var(--primary-light), var(--surface-color));
+      border-radius: var(--radius-lg);
+      margin-bottom: 2rem;
+    }
+
+    .profile-avatar {
+      width: 120px;
+      height: 120px;
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .profile-name {
+      font-size: 2rem;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+
+    .profile-join-date {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background-color: var(--surface-color);
+      padding: 1.5rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .badges-section {
+      width: 100%;
+      max-width: 800px;
+      background-color: var(--surface-color);
+      padding: 2rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+    }
+
+    .badges-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      justify-content: center;
+    }
+
+    .empty-badges {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-logo">
+        <i class="fas fa-book-open"></i>
+        Notes Hub
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="upload.html" class="nav-link auth-user-only">Upload</a>
+        <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+        <a href="saved.html" class="nav-link auth-user-only">Saved Notes</a>
+        <a href="profile.html" class="nav-link active auth-user-only">Profile</a>
+        <button id="theme-toggle" class="btn-icon" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+        <button id="logout-btn" class="btn-icon auth-user-only" title="Logout">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+      <button class="btn-icon mobile-menu-btn">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content container">
+    <div class="profile-header">
+      <div class="profile-avatar">
+        <i class="fas fa-user"></i>
+      </div>
+      <h1 class="profile-name" id="p-username">User</h1>
+      <p class="profile-join-date" id="p-join">Joined ...</p>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="p-uploads">0</div>
+          <div class="stat-label">Total Uploads</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="p-downloads">0</div>
+          <div class="stat-label">Notes Downloaded</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="p-rating">0.0</div>
+          <div class="stat-label">Avg Rating</div>
+        </div>
+      </div>
+
+      <div class="badges-section">
+        <h3><i class="fas fa-medal text-warning"></i> Your Achievements</h3>
+        <div class="badges-container" id="badges-container">
+          <!-- dynamically injected -->
+        </div>
+      </div>
+    </div>
+
+    <!-- My Uploaded Notes -->
+    <h2 class="mb-4"><i class="fas fa-cloud-upload-alt text-primary"></i> My Uploads</h2>
+    <div id="my-notes-grid" class="grid grid-cols-3 gap-6 mb-8"></div>
+    <div id="empty-state" class="text-center py-8" style="display: none;">
+      <i class="fas fa-file-excel fa-3x text-muted mb-4"></i>
+      <p class="text-muted">You haven't uploaded any notes yet.</p>
+      <a href="upload.html" class="btn btn-primary mt-4">Upload Now</a>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!requireAuth()) return;
+
+      const user = db.getUserById(state.currentUser.userId);
+      if (!user) return; // fail safe
+
+      // Render details
+      document.getElementById('p-username').innerText = user.username;
+      document.getElementById('p-join').innerText = `Joined ${formatDate(user.joinDate)}`;
+      document.getElementById('p-uploads').innerText = user.uploads;
+      document.getElementById('p-downloads').innerText = user.downloads;
+      document.getElementById('p-rating').innerText = user.averageRating;
+
+      // Render Badges
+      const badgesContainer = document.getElementById('badges-container');
+      if (user.badges && user.badges.length > 0) {
+        badgesContainer.innerHTML = user.badges.map(b =>
+          `<span class="badge"><i class="fas fa-star"></i> ${b}</span>`
+        ).join('');
+      } else {
+        badgesContainer.innerHTML = `<span class="empty-badges">Complete actions like uploading and rating to earn badges!</span>`;
+      }
+
+      // Render Uploads
+      const myNotes = db.getNotes().filter(n => n.uploaderId === user.userId);
+      const grid = document.getElementById('my-notes-grid');
+      const emptyState = document.getElementById('empty-state');
+
+      if (myNotes.length === 0) {
+        emptyState.style.display = 'block';
+      } else {
+        emptyState.style.display = 'none';
+        myNotes.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate)).forEach(note => {
+          const card = document.createElement('div');
+          card.className = 'card note-card';
+          card.innerHTML = `
+            <div class="card-body">
+              <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--primary-color);">
+                ${note.subject}
+              </span>
+              <h3 class="note-title mt-1">${note.title}</h3>
+              <div class="note-meta mt-2 mb-2">
+                <span><i class="far fa-calendar-alt"></i> ${formatDate(note.uploadDate)}</span>
+              </div>
+              <div class="text-warning mb-2" style="font-size: 0.9rem;">
+                <i class="fas fa-star"></i> ${note.averageRating} (${note.ratingCount})
+              </div>
+            </div>
+            <div class="card-footer text-muted justify-content-start" style="gap:1rem;">
+               <span><i class="fas fa-download"></i> ${note.downloadCount}</span>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>

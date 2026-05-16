@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Notes - Notes Hub</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .upload-container {
+      max-width: 600px;
+      margin: 2rem auto;
+    }
+
+    .file-name-display {
+      margin-top: 1rem;
+      font-weight: 500;
+      color: var(--primary-color);
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-logo">
+        <i class="fas fa-book-open"></i>
+        Notes Hub
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="upload.html" class="nav-link active auth-user-only">Upload</a>
+        <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+        <a href="saved.html" class="nav-link auth-user-only">Saved Notes</a>
+        <a href="profile.html" class="nav-link auth-user-only">Profile</a>
+        <a href="login.html" class="nav-link auth-guest-only">Login</a>
+        <a href="signup.html" class="btn btn-primary auth-guest-only">Sign Up</a>
+        <button id="theme-toggle" class="btn-icon" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+        <button id="logout-btn" class="btn-icon auth-user-only" title="Logout">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+      <button class="btn-icon mobile-menu-btn">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content container">
+    <div class="upload-container card">
+      <div class="card-header">
+        <h2><i class="fas fa-cloud-upload-alt text-primary"></i> Upload Notes</h2>
+        <p class="text-muted mt-1">Share your knowledge with the community</p>
+      </div>
+      <div class="card-body">
+        <form id="upload-form">
+          <div class="form-group">
+            <label for="title" class="form-label">Title</label>
+            <input type="text" id="title" class="form-control" required placeholder="E.g., Intro to Data Structures">
+          </div>
+          <div class="form-group">
+            <label for="subject" class="form-label">Subject</label>
+            <input type="text" id="subject" class="form-control" required placeholder="E.g., Computer Science">
+          </div>
+          <div class="form-group">
+            <label for="description" class="form-label">Description</label>
+            <textarea id="description" class="form-control" rows="3" required
+              placeholder="Briefly describe what these notes cover"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="tags" class="form-label">Tags (comma separated)</label>
+            <input type="text" id="tags" class="form-control" placeholder="E.g., math, calculus, exams">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">File</label>
+            <div class="drop-zone" id="drop-zone">
+              <i class="fas fa-file-upload fa-3x text-muted mb-2"></i>
+              <p>Drag and drop your file here or click to browse</p>
+              <p class="text-muted mt-1" style="font-size: 0.8rem;">Supported: PDF, Images, Docs (Max
+                20MB)</p>
+              <input type="file" id="file-input" style="display: none;" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
+            </div>
+            <div id="file-name" class="file-name-display"></div>
+            <div class="progress-container" id="progress-container">
+              <div class="progress-bar" id="progress-bar"></div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-full mt-4" id="submit-btn" disabled>
+            Upload Note
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!requireAuth()) return; // Protect route
+
+      const dropZone = document.getElementById('drop-zone');
+      const fileInput = document.getElementById('file-input');
+      const fileNameDisplay = document.getElementById('file-name');
+      const submitBtn = document.getElementById('submit-btn');
+      const form = document.getElementById('upload-form');
+      const progressContainer = document.getElementById('progress-container');
+      const progressBar = document.getElementById('progress-bar');
+
+      let selectedFile = null;
+
+      // Handle drag and drop
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+      });
+
+      dropZone.addEventListener('drop', handleDrop, false);
+      dropZone.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        handleFiles(dt.files);
+      }
+
+      function handleFiles(files) {
+        if (files.length > 0) {
+          const file = files[0];
+
+          // Size check (20MB)
+          if (file.size > 20 * 1024 * 1024) {
+            showToast('File size exceeds 20MB limit', 'error');
+            return;
+          }
+
+          selectedFile = file;
+          fileNameDisplay.innerHTML = `<i class="fas fa-file"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+          submitBtn.disabled = false;
+        }
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!selectedFile) {
+          showToast('Please select a file to upload', 'error');
+          return;
+        }
+
+        const title = document.getElementById('title').value.trim();
+        const subject = document.getElementById('subject').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const tagsInput = document.getElementById('tags').value;
+        const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="loader" style="width:16px;height:16px;border-width:2px;margin-right:8px;"></span> Uploading...';
+        progressContainer.style.display = 'block';
+
+        // Simulate upload progress animation
+        for (let i = 0; i <= 100; i += 10) {
+          progressBar.style.width = `${i}%`;
+          await new Promise(r => setTimeout(r, 100)); // Sleep
+        }
+
+        try {
+          const fileId = generateId();
+          const noteId = generateId();
+
+          // Save binary to IndexedDB
+          await fileDB.saveFile(fileId, selectedFile);
+
+          // Build metadata node
+          const newNote = {
+            noteId,
+            fileId, // Ref to IDB
+            fileName: selectedFile.name,
+            fileType: selectedFile.type,
+            title,
+            subject,
+            description,
+            tags,
+            uploaderId: state.currentUser.userId,
+            uploaderName: state.currentUser.username,
+            uploadDate: new Date().toISOString(),
+            downloadCount: 0,
+            averageRating: 0,
+            ratingCount: 0,
+            comments: 0 // Count of comments
+          };
+
+          // Save Meta
+          db.saveNote(newNote);
+
+          // Update user stats
+          const u = db.getUserById(state.currentUser.userId);
+          u.uploads += 1;
+          db.updateUser(u);
+          checkAndAwardBadges(u.userId);
+
+          showToast('Note uploaded successfully!', 'success');
+
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1500);
+
+        } catch (err) {
+          console.error(err);
+          showToast('Failed to save file to local database', 'error');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Upload Note';
+          progressContainer.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

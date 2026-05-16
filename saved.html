@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saved Notes - Notes Hub</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-logo">
+        <i class="fas fa-book-open"></i>
+        Notes Hub
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="upload.html" class="nav-link auth-user-only">Upload</a>
+        <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+        <a href="saved.html" class="nav-link active auth-user-only">Saved Notes</a>
+        <a href="profile.html" class="nav-link auth-user-only">Profile</a>
+        <button id="theme-toggle" class="btn-icon" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+        <button id="logout-btn" class="btn-icon auth-user-only" title="Logout">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+      <button class="btn-icon mobile-menu-btn">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content container">
+    <h1 class="mb-2"><i class="fas fa-bookmark text-primary"></i> My Saved Notes</h1>
+    <p class="text-muted mb-8">Access your bookmarked materials quickly.</p>
+
+    <div id="notes-grid" class="grid grid-cols-3 gap-6 mb-8">
+      <!-- Notes injected here -->
+    </div>
+
+    <div id="empty-state" class="text-center py-8" style="display: none; padding: 4rem 1rem;">
+      <i class="far fa-bookmark fa-4x text-muted mb-4"></i>
+      <h3>No saved notes</h3>
+      <p class="text-muted mt-2">Browse the feed and bookmark notes you want to read later.</p>
+      <a href="index.html" class="btn btn-primary mt-4">Browse Notes</a>
+    </div>
+
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!requireAuth()) return;
+      renderSavedFeed();
+    });
+
+    function getStars(rating) {
+      const full = Math.floor(rating);
+      const half = rating % 1 >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      return `${'<i class="fas fa-star"></i>'.repeat(full)}${'<i class="fas fa-star-half-alt"></i>'.repeat(half)}${'<i class="far fa-star"></i>'.repeat(empty)}`;
+    }
+
+    function renderSavedFeed() {
+      const bookmarks = db.getBookmarks(state.currentUser.userId);
+      const allNotes = db.getNotes();
+
+      const savedNotes = allNotes.filter(n => bookmarks.includes(n.noteId));
+
+      const grid = document.getElementById('notes-grid');
+      const emptyState = document.getElementById('empty-state');
+      grid.innerHTML = '';
+
+      if (savedNotes.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      savedNotes.forEach(note => {
+        const card = document.createElement('div');
+        card.className = 'card note-card';
+        card.innerHTML = `
+          <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--primary-color);">
+                ${note.subject}
+              </span>
+              <button class="btn-icon bookmark-btn" data-id="${note.noteId}" title="Remove Bookmark">
+                <i class="fas fa-bookmark text-primary"></i>
+              </button>
+            </div>
+            <h3 class="note-title">${note.title}</h3>
+            <div class="note-meta">
+              <span><i class="far fa-user"></i> ${note.uploaderName}</span>
+              <span><i class="far fa-calendar-alt"></i> ${formatDate(note.uploadDate)}</span>
+            </div>
+            <div class="rating-stars mb-4">
+              ${getStars(note.averageRating)} <span class="text-muted" style="font-size:0.8rem;">(${note.ratingCount})</span>
+            </div>
+          </div>
+          <div class="card-footer justify-content-start">
+             <a href="index.html" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View in Feed</a>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      // Bookmark Removal
+      document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const noteId = e.currentTarget.getAttribute('data-id');
+          db.toggleBookmark(state.currentUser.userId, noteId);
+          showToast('Note removed from bookmarks', 'info');
+          // Re-render
+          renderSavedFeed();
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>
